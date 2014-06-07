@@ -6,7 +6,21 @@ robertknight@gmail.com
 http://github.com/robertknight
 @robknight_
 
+* Overview
+
+- What is a data race and how can they happen in Go code?
+- Using the race detector to find and fix races
+- How the race detector works
+
 * Motivation
+
+* Motivation
+
+- Go makes concurrency easy
+- ... but also allows you to share data between goroutines
+
+// TODO - Simple and dumb example with obvious data race
+// TODO - More subtle example with less-obvious data race
 
 * Avoiding Races
 
@@ -16,8 +30,18 @@ http://github.com/robertknight
 
 	go test -race net/http
 	go run -race app.go
+	go build -race path/to/package
 
-- Fix issues found
+- Run your app (or tests)
+- The race detector will log details of races to console
+
+* Example 1
+
+// TODO - Example showing output from our obvious race
+
+* Example 2
+
+// TODO - Example showing output from our less-obvious race
 
 * Caveats
 
@@ -27,38 +51,72 @@ http://github.com/robertknight
 
 * How the Race Detector Works
 
+* Detecting Data Races
+
+In order to detect data races, we need to monitor:
+
+- Accesses to memory from different threads
+- Operations that impose ordering on memory accesses - either directly (eg. functions in `sync/atomic`) or indirectly (eg. primitives like mutexes, sending values over channels).
+
+Several approaches we could take for this.
+
+* Approach A - Emulate the machine
+
+.image images/fergulator.png 408 399
+
+- Emulate the system - intercept every memory access and function call
+- Comprehensive, but _slow_
+- Used by valgrind
+
+* Approach B - Rewrite the code
+
 The race detector uses a combination of _compile_time_ instrumentation
 and a _runtime_library_.
 
 At compile time, insert calls into the runtime library when "interesting events"
-happen: function entrance/exit, memory reads and writes.
+happen:
 
-* Compile time changes
+- Every memory read and write
+- Function entrance/exit
 
-- Instrument all function entrances and exits with calls to `racefuncenter()`, `racefuncexit()`
-- Instrument all memory reads and writes with calls to `raceread()`, `racewrite()`
-- Implementation in `cmd/gc/racewalk.c`
+Implementation in `cmd/gc/racewalk.c`
 
-* Runtime library
-- Uses the _ThreadSanitizer_ library
+* Runtime Components
+- Uses the _ThreadSanitizer_ library (originally developed for Chrome)
 - The `raceread()` and `racewrite()` functions.
-- Packages that provide concurrency primitives (eg. package sync) contain code to
-instrument acquire and release operations
+- Packages that provide concurrency primitives (eg. package sync) contain code to instrument operations that impose ordering on memory accesses.
+
+* Memory Access Ordering
+- Operations that order memory accesses come in two flavors - _acquire_ and _release_.
+- _Acquire_semantics_ - Applies to operations which _read_ from memory. A read with acquire semantics _happens_before_ any read or write operation which follows it in 'program order' (ie. in the code).
+- _Release_semantics_ - Applies to operations which _write_ to memory. Any read or write operation which come before the write with release semantics in program order _happen_before_ the write.
+
+/* TODO: Diagram showing acquire and release semantics */
 
 * Implementation - Shadow Memory
 
-- Every 8-byte word of app memory is associated with *N* shadow words (currently 4)
+- Every 8-byte word of app memory is associated with *N* _shadow_words_
+- Each shadow word describes a memory access (read or write) to a subset of the 8-byte word of app memory
 
-/* TODO - Diagram showing memory and shadow words */
+	// nb. this is only conceptual, actually a 64-bit word using bitfields in C
 
-- Each shadow word describes a memory access (read or write) to a subset of the 8-byte word of app memory.
+	type ShadowWord struct {
+		ThreadId int
+		Clock int
+		IsWrite bool
+		Start int // offset with the 8-byte block of app memory
+		Size int
+	}
+
 - Value of *N* determines how many different accesses can be recorded for each 8-byte word of app memory.
 
 * Implementation - State Machine
 
-- Every time a memory access occurs, the _shadow_memory_ is updated
+Every time a memory access occurs:
+
 - Create new _shadow_word_ is created to represent the current memory access
-- Compare with the *N* existing shadow words for the same 8-byte block of memory
+- Compare with the *N* existing shadow words for the same 8-byte block of memory to find races with earlier accesses.
+- Replace one of the existing shadow words
 
 * Implementation - Race Detection
 
@@ -78,13 +136,15 @@ If when comparing the new and existing shadow words we find two memory accesses 
 - Prevention is better than cure: _Share_memory_by_communicating_ (use channels)
 - Use the data race detector
 
-* Further Reading - Usage
+* Further Reading
+
+Usage
 
 .link http://blog.golang.org/race-detector Introducing the Go Race Detector (blog post)
 .link https://code.google.com/p/thread-sanitizer/wiki/GoManual ThreadSanitizer Go manual
 
-* Further Reading - Implementation
+Implementation
 
 .link https://code.google.com/p/thread-sanitizer/wiki/Algorithm ThreadSanitizer algorithm overview
-.link http://preshing.com/20120913/acquire-and-release-semantics/ Primer on Acquire and Release Semantics
+.link http://preshing.com/20120913/acquire-and-release-semantics/ Primer on Acquire and Release Semantics (useful to understand what it means for one memory access to _happen_before_ another)
 
