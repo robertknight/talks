@@ -18,11 +18,29 @@ http://github.com/robertknight
 
 - Go makes concurrency easy
 - ... but also allows you to share data between goroutines
+- Sometimes even easy to forget that code may execute concurrently
 
 // TODO - Simple and dumb example with obvious data race
 // TODO - More subtle example with less-obvious data race
 
 * Avoiding Races
+
+* Follow Go best practices for communicating
+
+- Use channels to share values between code that may run in different goroutines
+- Be familiar with the [[http://golang.org/ref/mem][Go memory model]]
+
+* Go memory model
+
+Provides details on what guarantees Go provides about the order in which events
+happen when:
+
+- Variables are read/written within the same or different goroutines
+- Goroutines start and finish
+- Values are sent or received on channels
+- Mutexes are locked or unlocked
+
+.link golang.org/ref/mem
 
 * Using the Race Detector
 
@@ -87,11 +105,19 @@ Implementation in `cmd/gc/racewalk.c`
 - Packages that provide concurrency primitives (eg. package sync) contain code to instrument operations that impose ordering on memory accesses.
 
 * Memory Access Ordering
-- Operations that order memory accesses come in two flavors - _acquire_ and _release_.
+- _Happen_before_ relations - If an operation is said to _happen_before_ another then the result must reflect that, even if operations really performed in a different order (eg. due to out-of-order execution by CPU).
+
+Term often used when discussing the _memory_model_ for a language.
+
+eg. from the Go reference: _"A_send_on_a_channel_happens_before_the_corresponding_receive_from_that_channel_completes"_
+
+This guarantee is what makes sharing values via channels safe.
+
+* Memory Access Ordering - Acquire and Release
+
+- Operations that guarantee a _happens_before_ relation between memory accesses come in several flavors. Two common ones are _acquire_ and _release_.
 - _Acquire_semantics_ - Applies to operations which _read_ from memory. A read with acquire semantics _happens_before_ any read or write operation which follows it in 'program order' (ie. in the code).
 - _Release_semantics_ - Applies to operations which _write_ to memory. Any read or write operation which come before the write with release semantics in program order _happen_before_ the write.
-
-/* TODO: Diagram showing acquire and release semantics */
 
 * Implementation - Shadow Memory
 
