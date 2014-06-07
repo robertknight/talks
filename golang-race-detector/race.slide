@@ -1,0 +1,90 @@
+The Go Race Detector
+
+11 Jun 2014
+Robert Knight
+robertknight@gmail.com
+http://github.com/robertknight
+@robknight_
+
+* Motivation
+
+* Avoiding Races
+
+* Using the Race Detector
+
+- Use the `-race` option with `go`build`, or other commands that accept build flags (`go`test`, `go`run`, `go`install`)
+
+	go test -race net/http
+	go run -race app.go
+
+- Fix issues found
+
+* Caveats
+
+- Only finds races in _running_ code.
+- Therefore testing must exercise _realistic_ workloads
+- Performance overhead - CPU cost of runtime library calls and additional memory usage
+
+* How the Race Detector Works
+
+The race detector uses a combination of _compile_time_ instrumentation
+and a _runtime_library_.
+
+At compile time, insert calls into the runtime library when "interesting events"
+happen: function entrance/exit, memory reads and writes.
+
+* Compile time changes
+
+- Instrument all function entrances and exits with calls to `racefuncenter()`, `racefuncexit()`
+- Instrument all memory reads and writes with calls to `raceread()`, `racewrite()`
+- Implementation in `cmd/gc/racewalk.c`
+
+* Runtime library
+- Uses the _ThreadSanitizer_ library
+- The `raceread()` and `racewrite()` functions.
+- Packages that provide concurrency primitives (eg. package sync) contain code to
+instrument acquire and release operations
+
+* Implementation - Shadow Memory
+
+- Every 8-byte word of app memory is associated with *N* shadow words (currently 4)
+
+/* TODO - Diagram showing memory and shadow words */
+
+- Each shadow word describes a memory access (read or write) to a subset of the 8-byte word of app memory.
+- Value of *N* determines how many different accesses can be recorded for each 8-byte word of app memory.
+
+* Implementation - State Machine
+
+- Every time a memory access occurs, the _shadow_memory_ is updated
+- Create new _shadow_word_ is created to represent the current memory access
+- Compare with the *N* existing shadow words for the same 8-byte block of memory
+
+* Implementation - Race Detection
+
+If when comparing the new and existing shadow words we find two memory accesses where:
+
+- The memory regions accessed overlap
+- The accesses happened in different threads
+- At least one of the accesses is a write
+- Neither access _happened_before_ the other
+
+*Houston,*we*have*a*race*
+
+* Summary
+
+- Concurrency is easy in Go
+- So are race conditions
+- Prevention is better than cure: _Share_memory_by_communicating_ (use channels)
+- Use the data race detector
+
+* Further Reading - Usage
+
+.link http://blog.golang.org/race-detector Introducing the Go Race Detector (blog post)
+.link https://code.google.com/p/thread-sanitizer/wiki/GoManual ThreadSanitizer Go manual
+
+* Further Reading - Implementation
+
+.link https://code.google.com/p/thread-sanitizer/wiki/Algorithm ThreadSanitizer algorithm overview
+.link http://preshing.com/20120913/acquire-and-release-semantics/ Primer on Acquire and Release Semantics
+
