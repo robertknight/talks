@@ -46,6 +46,16 @@ Two memory accesses are involved in a _data_race_ if they:
 - At least one of the accesses is a write
 - Neither access _happens_before_ the other
 
+This prints a different value on each run:
+
+	value := 0
+	for i := 0; i < 1000000; i++ {
+		go func() {
+			value += 1
+		}()
+	}
+	fmt.Printf("%d\n", value)
+
 * What does 'Happens Before' mean?
 
 - If an operation is said to _happen_before_ another then the result must reflect that, even if operations really performed in a different order (eg. due to out-of-order execution by CPU).
@@ -53,8 +63,6 @@ Two memory accesses are involved in a _data_race_ if they:
 - Term often used when discussing the _memory_model_ for a language.
 
 eg. from the Go reference: "A send on a channel _happens_before_ the corresponding receive from that channel completes"
-
-This guarantee is what makes sharing values via channels safe.
 
 * A Simple Example
 
@@ -157,7 +165,7 @@ Implementation in `cmd/gc/racewalk.c`
 * Runtime Components
 - Uses the _ThreadSanitizer_ library, originally developed for Chrome
 - Runtime provides functions that update _shadow_memory_ whenever memory accesses occur
-- Packages that provide concurrency primitives (eg. package sync) contain code to instrument operations that impose ordering on memory accesses, when the race detector is enabled
+- Packages that provide concurrency primitives (eg. package sync) contain code to instrument operations that *impose*ordering* on memory accesses, when the race detector is enabled
 
 * Memory Access Ordering - Acquire and Release
 
@@ -165,22 +173,20 @@ Implementation in `cmd/gc/racewalk.c`
 - _Acquire_semantics_ - Applies to operations which _read_ from memory. A read with acquire semantics _happens_before_ any read or write operation which follows it in 'program order' (ie. in the code).
 - _Release_semantics_ - Applies to operations which _write_ to memory. Any read or write operation which come before the write with release semantics in program order _happen_before_ the write.
 
-* Implementation - Shadow Memory
+* Shadow Memory
 
-- Every 8-byte word of app memory is associated with *N* _shadow_words_
-- Each shadow word describes a memory access (read or write) to a subset of the 8-byte word of app memory
+Every 8-byte word of app memory is associated with *N* _shadow_words_.
 
-	// nb. this is only conceptual, actually a 64-bit word using bitfields in C
+Each shadow word describes a memory access:
 
-	type ShadowWord struct {
-		ThreadId int
-		Clock int
-		IsWrite bool
-		Start int // offset with the 8-byte block of app memory
-		Size int
-	}
+- Which *thread* the access happened in
+- Which *sub-region* of the 8-byte block the access applies to
+- What " *time* " the access happened at
+- Whether it was a *read*or*write*
 
-- Value of *N* determines how many different accesses can be recorded for each 8-byte word of app memory.
+* Shadow Memory
+
+.image images/shadowmem.svg
 
 * Implementation - State Machine
 

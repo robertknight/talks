@@ -1,0 +1,18 @@
+digraph ShadowMem {
+	node [shape = record];
+	appMem [ label = "<f0> [0..8] | <f1> [8..16] | <f2> [16..24] | <f3> [24..32]", xlabel="App Memory" ]
+
+	shadowWords0 [ label = "<f0> Slot 0 | <f1> Slot 1 | <f2> Slot 2 | <f3> Slot 3", style=dashed, xlabel="Shadow Memory" ]
+	shadowWords1 [ label = "<f0> | <f1> | <f2> | <f3>", style=dashed ]
+	shadowWords2 [ label = "<f0> | <f1> | <f2> | <f3>", style=dashed ]
+	shadowWords3 [ label = "<f0> | <f1> | <f2> | <f3>", style=dashed ]
+
+	shadowWordDetail [ label = "<f0> ThreadID | <f1> Clock | <f2> IsWrite? | <f3> Start | <f4> Size", xlabel="Shadow Word (64 bits)" ]
+
+	"appMem":f0 -> "shadowWords0"
+	"appMem":f1 -> "shadowWords1"
+	"appMem":f2 -> "shadowWords2"
+	"appMem":f3 -> "shadowWords3"
+
+	"shadowWords0":f0 -> "shadowWordDetail"
+}
