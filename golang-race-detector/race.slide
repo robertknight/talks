@@ -17,41 +17,44 @@ http://github.com/robertknight
 * Motivation
 
 - Go makes concurrency easy
-- ... but also allows you to share data between goroutines
-- Sometimes even easy to forget that code may execute concurrently
 
-// TODO - Simple and dumb example with obvious data race
-// TODO - More subtle example with less-obvious data race
+	// explicit concurrency using 'go' statement
+	go func() {
+		...
+	}
 
-* Avoiding Races
+	// implicit concurrency via standard library
+	timer.AfterFunc(5 * time.Seconds, func() {
+		...
+	})
 
-* Follow Go best practices for communicating
+- ... but also allows you to share mutable data between goroutines
+- Therefore _data_races_ are possible
+- These are often hard to debug
 
-- Use channels to share values between code that may run in different goroutines
-- Be familiar with the [[http://golang.org/ref/mem][Go memory model]]
+* What is a data race?
 
-* Go memory model
+A condition where the timing or ordering of two memory accesses in a program
+affects whether the outcome is correct or not.
 
-Provides details on what guarantees Go provides about the order in which events
-happen when:
+* Data Race conditions
 
-- Variables are read/written within the same or different goroutines
-- Goroutines start and finish
-- Values are sent or received on channels
-- Mutexes are locked or unlocked
+Two memory accesses are involved in a _data_race_ if they:
 
-.link golang.org/ref/mem
+- Target the same piece of memory
+- Happen concurrently in two goroutines
+- At least one of the accesses is a write
+- Neither access _happens_before_ the other
 
-* Using the Race Detector
+* What does 'Happens Before' mean?
 
-- Use the `-race` option with `go`build`, or other commands that accept build flags (`go`test`, `go`run`, `go`install`)
+- If an operation is said to _happen_before_ another then the result must reflect that, even if operations really performed in a different order (eg. due to out-of-order execution by CPU).
 
-	go test -race net/http
-	go run -race app.go
-	go build -race path/to/package
+- Term often used when discussing the _memory_model_ for a language.
 
-- Run your app (or tests)
-- The race detector will log details of races to console
+eg. from the Go reference: "A send on a channel _happens_before_ the corresponding receive from that channel completes"
+
+This guarantee is what makes sharing values via channels safe.
 
 * A Simple Example
 
@@ -69,7 +72,42 @@ Output:
 	Processing c.png
 	Processing c.png
 
+* Avoiding Races
+
+* Follow Go best practices for communicating
+
+- Use channels to share values between code that may run in different goroutines
+- Many good articles on concurrency patterns at [[blog.golang.org/index]]
+- Be familiar with the [[http://golang.org/ref/mem][Go memory model]]
+
+* Go memory model
+
+Provides details on what guarantees Go provides about the order in which events
+happen when:
+
+- Variables are read/written within the same or different goroutines
+- Goroutines start and finish
+- Values are sent or received on channels
+- Mutexes are locked or unlocked
+
+.link golang.org/ref/mem
+
+* Using the Race Detector
+
+The Race Detector was introduced in Go 1.1. Available for 64bit Linux, Mac & Windows OSes.
+
+- Use the `-race` build option
+
+	go test -race net/http
+	go run -race app.go
+	go build -race path/to/package
+
+- Run your app (or tests)
+- The race detector will log details of races to console
+
 * A Simple Example - Race Detector Output
+
+	go run -race simple.go
 
 .code examples/simple.race
 
@@ -82,7 +120,7 @@ Output:
 - Only finds races in _running_ code.
 - Therefore testing must exercise _realistic_ workloads
 - Performance overhead - CPU cost of runtime library calls (~2-10x) and additional memory usage (~5-10x)
-- Detects _data_races_ - These are not the only kind of race condition
+- Only detects _data_races_ - These are not the only kind of race condition
 
 * How the Race Detector Works
 
@@ -101,7 +139,7 @@ Several approaches we could take for this.
 
 - Emulate the system - intercept every memory access and function call
 - Comprehensive, but _slow_
-- Used by valgrind
+- Used by valgrind (more specifically, the _helgrind_ and _DRD_ tools)
 
 * Approach B - Rewrite the code
 
@@ -117,19 +155,9 @@ happen:
 Implementation in `cmd/gc/racewalk.c`
 
 * Runtime Components
-- Uses the _ThreadSanitizer_ library (originally developed for Chrome)
-- The `raceread()` and `racewrite()` functions.
-- Packages that provide concurrency primitives (eg. package sync) contain code to instrument operations that impose ordering on memory accesses.
-
-* Happens Before relations
-
-- _Happen_before_ relations - If an operation is said to _happen_before_ another then the result must reflect that, even if operations really performed in a different order (eg. due to out-of-order execution by CPU).
-
-Term often used when discussing the _memory_model_ for a language.
-
-eg. from the Go reference: _"A_send_on_a_channel_happens_before_the_corresponding_receive_from_that_channel_completes"_
-
-This guarantee is what makes sharing values via channels safe.
+- Uses the _ThreadSanitizer_ library, originally developed for Chrome
+- Runtime provides functions that update _shadow_memory_ whenever memory accesses occur
+- Packages that provide concurrency primitives (eg. package sync) contain code to instrument operations that impose ordering on memory accesses, when the race detector is enabled
 
 * Memory Access Ordering - Acquire and Release
 
@@ -158,13 +186,13 @@ This guarantee is what makes sharing values via channels safe.
 
 Every time a memory access occurs:
 
-- Create new _shadow_word_ is created to represent the current memory access
+- Create new _shadow_word_ to represent the current memory access
 - Compare with the *N* existing shadow words for the same 8-byte block of memory to find races with earlier accesses.
-- Replace one of the existing shadow words
+- Replace one of the existing shadow words (one that _happened_before_ this access if possible)
 
 * Implementation - Race Detection
 
-If when comparing the new and existing shadow words we find two memory accesses where:
+If, when comparing the new and existing shadow words, we find two memory accesses where:
 
 - The memory regions accessed overlap
 - The accesses happened in different threads
@@ -175,10 +203,10 @@ If when comparing the new and existing shadow words we find two memory accesses 
 
 * Summary
 
-- Concurrency is easy in Go
-- So are race conditions
+- Concurrency is easy in Go ☺
+- ... so are race conditions ☹
 - Prevention is better than cure: _Share_memory_by_communicating_ (use channels)
-- Use the data race detector
+- *Use*the*data*race*detector*
 
 * Further Reading
 
@@ -192,3 +220,6 @@ Implementation
 .link https://code.google.com/p/thread-sanitizer/wiki/Algorithm ThreadSanitizer algorithm overview
 .link http://preshing.com/20120913/acquire-and-release-semantics/ Primer on Acquire and Release Semantics (useful to understand what it means for one memory access to _happen_before_ another)
 
+Notable Examples
+
+.link https://code.google.com/p/go/issues/list?can=1&q=label%3AThreadSanitizer&colspec=ID+Status+Stars+Release+Owner+Repo+Summary&cells=tiles Bugs in the standard library found by the race detector
