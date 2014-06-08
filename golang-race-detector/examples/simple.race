@@ -1,0 +1,12 @@
+WARNING: DATA RACE
+Read by goroutine 3:
+  main.func·001()
+      /home/robert/projects/talks/golang-race-detector/examples/simple.go:27 +0x99
+
+Previous write by main goroutine:
+  main.main()
+      /home/robert/projects/talks/golang-race-detector/examples/simple.go:25 +0x153
+
+Goroutine 3 (running) created at:
+  main.main()
+      /home/robert/projects/talks/golang-race-detector/examples/simple.go:30 +0x1e4

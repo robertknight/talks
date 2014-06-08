@@ -53,19 +53,36 @@ happen when:
 - Run your app (or tests)
 - The race detector will log details of races to console
 
-* Example 1
+* A Simple Example
 
-// TODO - Example showing output from our obvious race
+A concurrent image processing program
 
-* Example 2
+.code -numbers examples/simple.go /^func main/,/^}/
 
-// TODO - Example showing output from our less-obvious race
+* A Simple Example - Output
+
+	go run simple.go a.png b.png c.png
+
+Output:
+
+	Processing c.png
+	Processing c.png
+	Processing c.png
+
+* A Simple Example - Race Detector Output
+
+.code examples/simple.race
+
+* A Simple Example - Fixed
+
+.code examples/simple-fixed.go /^func main/,/^}/
 
 * Caveats
 
 - Only finds races in _running_ code.
 - Therefore testing must exercise _realistic_ workloads
-- Performance overhead - CPU cost of runtime library calls and additional memory usage
+- Performance overhead - CPU cost of runtime library calls (~2-10x) and additional memory usage (~5-10x)
+- Detects _data_races_ - These are not the only kind of race condition
 
 * How the Race Detector Works
 
@@ -104,7 +121,8 @@ Implementation in `cmd/gc/racewalk.c`
 - The `raceread()` and `racewrite()` functions.
 - Packages that provide concurrency primitives (eg. package sync) contain code to instrument operations that impose ordering on memory accesses.
 
-* Memory Access Ordering
+* Happens Before relations
+
 - _Happen_before_ relations - If an operation is said to _happen_before_ another then the result must reflect that, even if operations really performed in a different order (eg. due to out-of-order execution by CPU).
 
 Term often used when discussing the _memory_model_ for a language.
