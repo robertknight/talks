@@ -31,6 +31,7 @@ http://github.com/robertknight
 - ... but also allows you to share mutable data between goroutines
 - Therefore _data_races_ are possible
 - These are often hard to debug
+- Go's memory safety guarantees do not apply in presence of data races
 
 * What is a data race?
 
@@ -64,13 +65,13 @@ This prints a different value on each run:
 
 eg. from the Go reference: "A send on a channel _happens_before_ the corresponding receive from that channel completes"
 
-* A Simple Example
+* Data Races - A buggy example
 
 A concurrent image processing program
 
 .code -numbers examples/simple.go /^func main/,/^}/
 
-* A Simple Example - Output
+* Data Races - A buggy example
 
 	go run simple.go a.png b.png c.png
 
@@ -118,6 +119,13 @@ The Race Detector was introduced in Go 1.1. Available for 64bit Linux, Mac & Win
 	go run -race simple.go
 
 .code examples/simple.race
+
+* A Simple Example - Explained
+
+_path_ variable is captured by reference. Goroutines only see the value
+it has by the time they start executing.
+
+.code -numbers examples/simple.go /^func main/,/^}/ HLpath
 
 * A Simple Example - Fixed
 
@@ -175,7 +183,7 @@ Implementation in `cmd/gc/racewalk.c`
 
 * Shadow Memory
 
-Every 8-byte word of app memory is associated with *N* _shadow_words_.
+Every 8-byte word of app memory is associated with *N* (currently == 4) _shadow_words_.
 
 Each shadow word describes a memory access:
 
@@ -205,7 +213,7 @@ If, when comparing the new and existing shadow words, we find two memory accesse
 - At least one of the accesses is a write
 - Neither access _happened_before_ the other
 
-*Houston,*we*have*a*race*
+*Houston,*we*have*a*race*→*Output*a*report*
 
 * Summary
 

@@ -22,10 +22,10 @@ func main() {
 	done := make(chan bool)
 	paths := os.Args[1:]
 
-	for _, path := range paths {
+	for _, path := range paths { // HLpath
 		go func() {
-			fmt.Printf("Processing %s\n", path)
-			processImage(path)
+			fmt.Printf("Processing %s\n", path) // HLpath
+			processImage(path) // HLpath
 			done <- true
 		}()
 	}
