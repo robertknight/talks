@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>The Go Race Detector</title>
+    <meta charset="utf-8">
+    <script src="golang-race-detector_files/slides.js"></script>
+  <meta content="width=1100,height=750" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"></head>
+
+  <body class="loaded" style="display: none">
+
+    <section class="slides layout-widescreen">
+      
+      <article class="current">
+        <h1>The Go Race Detector</h1>
+        
+        
+        
+          <div class="presenter">
+            
+  
+  <p>
+    11 Jun 2014
+  </p>
+  
+
+  
+  <p>
+    Robert Knight
+  </p>
+  
+
+          </div>
+        
+      </article>
+      
+  
+  
+      <article class="next">
+      
+        <h3>Overview</h3>
+        
+  <ul>
+  
+    <li>What is a data race and how can they happen in Go code?</li>
+  
+    <li>Using the race detector to find and fix races</li>
+  
+    <li>How the race detector works</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article class="far-next">
+      
+        <h2>Motivation</h2>
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Motivation</h3>
+        
+  <ul>
+  
+    <li>Go makes concurrency easy</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>// explicit concurrency using 'go' statement
+go func() {
+    ...
+}
+
+// implicit concurrency via standard library
+timer.AfterFunc(5 * time.Seconds, func() {
+    ...
+})</pre></div>
+  
+
+  <ul>
+  
+    <li>... but also allows you to share mutable data between goroutines</li>
+  
+    <li>Therefore <i>data races</i> are possible</li>
+  
+    <li>These are often hard to debug</li>
+  
+    <li>Go's memory safety guarantees do not apply in presence of data races</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>What is a data race?</h3>
+        
+  
+  <p>
+    A condition where the timing or ordering of two memory accesses in a program
+<br>
+
+    affects whether the outcome is correct or not.
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Data Race conditions</h3>
+        
+  
+  <p>
+    Two memory accesses are involved in a <i>data race</i> if they:
+  </p>
+  
+
+  <ul>
+  
+    <li>Target the same piece of memory</li>
+  
+    <li>Happen concurrently in two goroutines</li>
+  
+    <li>At least one of the accesses is a write</li>
+  
+    <li>Neither access <i>happens before</i> the other</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>value := 0
+for i := 0; i &lt; 1000000; i++ {
+    go func() {
+        value += 1
+    }()
+}
+fmt.Printf("%d\n", value)</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>What does 'Happens Before' mean?</h3>
+        
+  <ul>
+  
+    <li>If an operation is said to <i>happen before</i> another then the
+ result must reflect that, even if operations really performed in a 
+different order (eg. due to out-of-order execution by CPU).</li>
+  
+  </ul>
+
+  <ul>
+  
+    <li>Term often used when discussing the <i>memory model</i> for a language.</li>
+  
+  </ul>
+
+  
+  <p>
+    eg. from the Go reference: "A send on a channel <i>happens before</i> the corresponding receive from that channel completes"
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Data Races - A buggy example</h3>
+        
+  
+  <p>
+    A concurrent image processing program
+  </p>
+  
+
+  <div class="code" spellcheck="false" contenteditable="true">
+
+
+<pre class="numbers"><span num="21">func main() {</span>
+<span num="22">    done := make(chan bool)</span>
+<span num="23">    paths := os.Args[1:]</span>
+<span num="24"></span>
+<span num="25">    for _, path := range paths {</span>
+<span num="26">        go func() {</span>
+<span num="27">            fmt.Printf("Processing %s\n", path)</span>
+<span num="28">            processImage(path)</span>
+<span num="29">            done &lt;- true</span>
+<span num="30">        }()</span>
+<span num="31">    }</span>
+<span num="32"></span>
+<span num="33">    for processed := 0; processed &lt; len(paths); processed++ {</span>
+<span num="34">        &lt;-done</span>
+<span num="35">    }</span>
+<span num="36">}</span>
+</pre>
+
+
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Data Races - A buggy example</h3>
+        
+  
+  <div class="code"><pre>go run simple.go a.png b.png c.png</pre></div>
+  
+
+  
+  <p>
+    Output:
+  </p>
+  
+
+  
+  <div class="code"><pre>Processing c.png
+Processing c.png
+Processing c.png</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h2>Avoiding Races</h2>
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Follow Go best practices for communicating</h3>
+        
+  <ul>
+  
+    <li>Use channels to share values between code that may run in different goroutines</li>
+  
+    <li>Many good articles on concurrency patterns at <a href="http://127.0.0.1:3999/blog.golang.org/index" target="_self">blog.golang.org/index</a></li>
+  
+    <li>Be familiar with the <a href="http://golang.org/ref/mem" target="_blank">Go memory model</a></li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Go memory model</h3>
+        
+  
+  <p>
+    Provides details on what guarantees Go provides about the order in which events
+<br>
+
+    happen when:
+  </p>
+  
+
+  <ul>
+  
+    <li>Variables are read/written within the same or different goroutines</li>
+  
+    <li>Goroutines start and finish</li>
+  
+    <li>Values are sent or received on channels</li>
+  
+    <li>Mutexes are locked or unlocked</li>
+  
+  </ul>
+<p class="link"><a href="http://127.0.0.1:3999/golang.org/ref/mem" target="_blank">golang.org/ref/mem</a></p>
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Using the Race Detector</h3>
+        
+  
+  <p>
+    The Race Detector was introduced in Go 1.1. Available for 64bit Linux, Mac &amp; Windows OSes.
+  </p>
+  
+
+  <ul>
+  
+    <li>Use the <code>-race</code> build option</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>go test -race net/http
+go run -race app.go
+go build -race path/to/package</pre></div>
+  
+
+  <ul>
+  
+    <li>Run your app (or tests)</li>
+  
+    <li>The race detector will log details of races to console</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>A Simple Example - Race Detector Output</h3>
+        
+  
+  <div class="code"><pre>go run -race simple.go</pre></div>
+  
+
+  <div class="code" spellcheck="false" contenteditable="true">
+
+
+<pre><span num="1">WARNING: DATA RACE</span>
+<span num="2">Read by goroutine 3:</span>
+<span num="3">  main.func·001()</span>
+<span num="4">      /home/robert/projects/talks/golang-race-detector/examples/simple.go:27 +0x99</span>
+<span num="5"></span>
+<span num="6">Previous write by main goroutine:</span>
+<span num="7">  main.main()</span>
+<span num="8">      /home/robert/projects/talks/golang-race-detector/examples/simple.go:25 +0x153</span>
+<span num="9"></span>
+<span num="10">Goroutine 3 (running) created at:</span>
+<span num="11">  main.main()</span>
+<span num="12">      /home/robert/projects/talks/golang-race-detector/examples/simple.go:30 +0x1e4</span>
+</pre>
+
+
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>A Simple Example - Explained</h3>
+        
+  
+  <p>
+    <i>path</i> variable is captured by reference. Goroutines only see the value
+<br>
+
+    it has by the time they start executing.
+  </p>
+  
+
+  <div class="code" spellcheck="false" contenteditable="true">
+
+
+<pre class="numbers"><span num="21">func main() {</span>
+<span num="22">    done := make(chan bool)</span>
+<span num="23">    paths := os.Args[1:]</span>
+<span num="24"></span>
+<span num="25">    <b>for _, path := range paths {</b></span>
+<span num="26">        go func() {</span>
+<span num="27">            <b>fmt.Printf("Processing %s\n", path)</b></span>
+<span num="28">            <b>processImage(path)</b></span>
+<span num="29">            done &lt;- true</span>
+<span num="30">        }()</span>
+<span num="31">    }</span>
+<span num="32"></span>
+<span num="33">    for processed := 0; processed &lt; len(paths); processed++ {</span>
+<span num="34">        &lt;-done</span>
+<span num="35">    }</span>
+<span num="36">}</span>
+</pre>
+
+
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>A Simple Example - Fixed</h3>
+        
+  <div class="code" spellcheck="false" contenteditable="true">
+
+
+<pre><span num="21">func main() {</span>
+<span num="22">    done := make(chan bool)</span>
+<span num="23">    paths := os.Args[1:]</span>
+<span num="24"></span>
+<span num="25">    for _, path := range paths {</span>
+<span num="26">        <b>go func(path string) {</b></span>
+<span num="27">            fmt.Printf("Processing %s\n", path)</span>
+<span num="28">            processImage(path)</span>
+<span num="29">            done &lt;- true</span>
+<span num="30">        <b>}(path)</b></span>
+<span num="31">    }</span>
+<span num="32"></span>
+<span num="33">    for processed := 0; processed &lt; len(paths); processed++ {</span>
+<span num="34">        &lt;-done</span>
+<span num="35">    }</span>
+<span num="36">}</span>
+</pre>
+
+
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Caveats</h3>
+        
+  <ul>
+  
+    <li>Only finds races in <i>running</i> code.</li>
+  
+    <li>Therefore testing must exercise <i>realistic</i> workloads</li>
+  
+    <li>Performance overhead - CPU cost of runtime library calls (~2-10x) and additional memory usage (~5-10x)</li>
+  
+    <li>Only detects <i>data races</i> - These are not the only kind of race condition</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h2>How the Race Detector Works</h2>
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Detecting Data Races</h3>
+        
+  
+  <p>
+    In order to detect data races, we need to monitor:
+  </p>
+  
+
+  <ul>
+  
+    <li>Accesses to memory from different threads</li>
+  
+    <li>Operations that impose ordering on memory accesses - either directly (eg. functions in <code>sync/atomic</code>) or indirectly (eg. primitives like mutexes, sending values over channels).</li>
+  
+  </ul>
+
+  
+  <p>
+    Several approaches we could take for this.
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Approach A - Emulate the machine</h3>
+        
+<div class="image">
+  <img src="golang-race-detector_files/fergulator.png" height="408" width="399">
+</div>
+
+  <ul>
+  
+    <li>Emulate the system - intercept every memory access and function call</li>
+  
+    <li>Comprehensive, but <i>slow</i></li>
+  
+    <li>Used by valgrind (more specifically, the <i>helgrind</i> and <i>DRD</i> tools)</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Approach B - Rewrite the code</h3>
+        
+  
+  <p>
+    The race detector uses a combination of <i>compile time</i> instrumentation
+<br>
+
+    and a <i>runtime library</i>.
+  </p>
+  
+
+  
+  <p>
+    At compile time, insert calls into the runtime library when "interesting events"
+<br>
+
+    happen:
+  </p>
+  
+
+  <ul>
+  
+    <li>Every memory read and write</li>
+  
+    <li>Function entrance/exit</li>
+  
+  </ul>
+
+  
+  <p>
+    Implementation in <code>cmd/gc/racewalk.c</code>
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Runtime Components</h3>
+        
+  <ul>
+  
+    <li>Uses the <i>ThreadSanitizer</i> library, originally developed for Chrome</li>
+  
+    <li>Runtime provides functions that update <i>shadow memory</i> whenever memory accesses occur</li>
+  
+    <li>Packages that provide concurrency primitives (eg. package sync) contain code to instrument operations that <b>impose ordering</b> on memory accesses, when the race detector is enabled</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Memory Access Ordering - Acquire and Release</h3>
+        
+  <ul>
+  
+    <li>Operations that guarantee a <i>happens before</i> relation between memory accesses come in several flavors. Two common ones are <i>acquire</i> and <i>release</i>.</li>
+  
+    <li><i>Acquire semantics</i> - Applies to operations which <i>read</i> from memory. A read with acquire semantics <i>happens before</i> any read or write operation which follows it in 'program order' (ie. in the code).</li>
+  
+    <li><i>Release semantics</i> - Applies to operations which <i>write</i> to memory. Any read or write operation which come before the write with release semantics in program order <i>happen before</i> the write.</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Shadow Memory</h3>
+        
+  
+  <p>
+    Every 8-byte word of app memory is associated with <b>N</b> (currently == 4) <i>shadow words</i>.
+  </p>
+  
+
+  
+  <p>
+    Each shadow word describes a memory access:
+  </p>
+  
+
+  <ul>
+  
+    <li>Which <b>thread</b> the access happened in</li>
+  
+    <li>Which <b>sub-region</b> of the 8-byte block the access applies to</li>
+  
+    <li>What " <b>time</b> " the access happened at</li>
+  
+    <li>Whether it was a <b>read or write</b></li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Shadow Memory</h3>
+        
+<div class="image">
+  <img src="golang-race-detector_files/shadowmem.svg">
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Implementation - State Machine</h3>
+        
+  
+  <p>
+    Every time a memory access occurs:
+  </p>
+  
+
+  <ul>
+  
+    <li>Create new <i>shadow word</i> to represent the current memory access</li>
+  
+    <li>Compare with the <b>N</b> existing shadow words for the same 8-byte block of memory to find races with earlier accesses.</li>
+  
+    <li>Replace one of the existing shadow words (one that <i>happened before</i> this access if possible)</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Implementation - Race Detection</h3>
+        
+  
+  <p>
+    If, when comparing the new and existing shadow words, we find two memory accesses where:
+  </p>
+  
+
+  <ul>
+  
+    <li>The memory regions accessed overlap</li>
+  
+    <li>The accesses happened in different threads</li>
+  
+    <li>At least one of the accesses is a write</li>
+  
+    <li>Neither access <i>happened before</i> the other</li>
+  
+  </ul>
+
+  
+  <p>
+    <b>Houston, we have a race → Output a report</b>
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Summary</h3>
+        
+  <ul>
+  
+    <li>Concurrency is easy in Go ☺</li>
+  
+    <li>... so are race conditions ☹</li>
+  
+    <li>Prevention is better than cure: <i>Share memory by communicating</i> (use channels)</li>
+  
+    <li><b>Use the data race detector</b></li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article class="">
+      
+        <h3>Further Reading</h3>
+        
+  
+  <p>
+    Usage
+  </p>
+  
+<p class="link"><a href="http://blog.golang.org/race-detector" target="_blank">Introducing the Go Race Detector (blog post)</a></p><p class="link"><a href="https://code.google.com/p/thread-sanitizer/wiki/GoManual" target="_blank">ThreadSanitizer Go manual</a></p>
+  
+  <p>
+    Implementation
+  </p>
+  
+<p class="link"><a href="https://code.google.com/p/thread-sanitizer/wiki/Algorithm" target="_blank">ThreadSanitizer algorithm overview</a></p><p class="link"><a href="http://preshing.com/20120913/acquire-and-release-semantics/" target="_blank">Primer on Acquire and Release Semantics (useful to understand what it means for one memory access to <i>happen before</i> another)</a></p>
+  
+  <p>
+    Notable Examples
+  </p>
+  
+<p class="link"><a href="https://code.google.com/p/go/issues/list?can=1&amp;q=label%3AThreadSanitizer&amp;colspec=ID+Status+Stars+Release+Owner+Repo+Summary&amp;cells=tiles" target="_blank">Bugs in the standard library found by the race detector</a></p>
+      
+      </article>
+  
+  
+
+      <article class="">
+        <h3>Thank you</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    11 Jun 2014
+  </p>
+  
+
+  
+  <p>
+    Robert Knight
+  </p>
+  
+<p class="link"><a href="mailto:robertknight@gmail.com" target="_blank">robertknight@gmail.com</a></p><p class="link"><a href="http://github.com/robertknight" target="_blank">http://github.com/robertknight</a></p><p class="link"><a href="http://twitter.com/robknight_" target="_blank">@robknight_</a></p>
+          </div>
+        
+      </article>
+
+  
+  
+  <script src="golang-race-detector_files/play.js"></script>
+  
+
+<div id="prev-slide-area" class="slide-area"></div><div id="next-slide-area" class="slide-area"></div></section><link href="golang-race-detector_files/css.css" type="text/css" rel="stylesheet"><link href="golang-race-detector_files/styles.css" type="text/css" rel="stylesheet"><link href="golang-race-detector_files/print.css" media="print" type="text/css" rel="stylesheet"></body></html>
