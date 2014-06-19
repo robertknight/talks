@@ -44,6 +44,9 @@ Goroutines are not first class values
 - No way to determine current Goroutine ID
 - No way to wait on a particular Goroutine
 
+Goroutines _can_ share memory - need to be careful here,
+data races are possible.
+
 * Goroutines
 
 Widely used in standard library
@@ -65,3 +68,33 @@ Receiving _blocks_ until a value is available to read
 * Channels - Buffered
 
 .play code/chan_buffer.go
+
+* Channels as Values
+
+Channels can be passed around and returned as values.
+
+.play code/time_tick.go
+
+* Goroutines & Web Requests
+
+Making the site health checker concurrent:
+
+.play code/site-health.go /START OMIT/,/END OMIT/
+
+See code/site-health.go
+
+* Goroutines - Gotcha
+
+Remember that func captures variables by reference:
+
+.play code/site-health-broken.go /START OMIT/,/END OMIT/
+
+Find problems with
+
+	go run -race code/site-health-broken.go
+
+* Select
+
+The _select_ statement can be used to wait on multiple channels.
+
+.play code/select.go /START OMIT/,/END OMIT/
