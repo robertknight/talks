@@ -1,0 +1,157 @@
+Go - Language
+
+18 Jun 2014
+
+* The Basics
+
+* func main()
+
+Every file has a 'package' clause at the top. The one for the entry point into an app has 'package main' at the top.
+
+	package main
+
+	func main() {
+	}
+
+* Importing packages
+
+Go has a large standard library documented at [[http://golang.org/pkg/]].
+To use a piece of functionality, import statements are required
+
+	import "fmt"
+
+If you import a package but don't use it, that is an _error_.
+
+This gets a bit annoying, there is a tool that will add/remove imports
+for you based on what you use in your code:
+
+	go get code.google.com/p/go.tools/cmd/goimports
+
+* Importing packages
+
+Go has a simple rule about which functions and types are available
+outside a package.
+
+If a name starts with a *capital*letter* it is exported ('public'), otherwise it isn't.
+
+.play code/exports.go
+
+* Functions
+
+Functions start with `func`, can return one or more values.
+
+	func add(a int, b int) int {
+		return a + b
+	}
+
+A very common pattern is
+
+	func someFunc(a type, b type) (result, error)
+
+eg:
+
+	func currentTime() (string, error) {
+		time, err := http.Get("timeapi.org/utc/now")
+		if err != nil {
+			return "", err
+		}
+		return time, nil
+	}
+
+
+* Functions
+
+.play code/funcs.go
+
+* Variables
+
+Go has types, but usually inferred for variables.
+Most common syntax is:
+
+	someVar := initialValue
+
+eg.
+
+	myName := "Bob"
+
+Or explicitly:
+
+	var myName string
+	myName = "Bob"
+
+* Variable Types
+
+No automatic conversions between types, use explicit conversions
+
+.play code/types.go
+
+* Loops
+
+Go only has one keyword for loops - `for`
+
+	for i := 0; i < max; i++ {
+	}
+
+The first and third parts are optional, so a `while` loop is:
+
+	for i < max {
+	}
+
+And a forever loop:
+
+	for {
+	}
+
+* Loops - 2
+
+A slight variation on the for loop is `range` for iterating over
+arrays and maps.
+
+.play code/arrays.go
+
+* Arrays
+
+Go has arrays but it is much more common to work with _slices_,
+which are views onto part of an array.
+
+Create a slice with `existingSlice[start:end]`
+
+package main
+
+func 
+
+.play code/slices.go
+
+* Maps
+
+Go has key/value maps as a built-in type.
+
+	aMap := map[keyType]valueType{
+		keyA : valueA,
+		keyB : valueB
+	}
+	for key, value := range aMap {
+		// ...
+	}
+
+* Maps
+
+.play code/maps.go
+
+* Maps
+
+That last example is inefficient, we'll come back and add concurrency later.
+
+* Structs
+
+Go has structs, these can be passed around via _reference_ or _value_.
+
+	type Point struct {
+		X float
+		Y float
+	}
+
+	aPointValue := Point{X : 1, Y : 2}
+	aPointReference := &Point{X : 2, Y : 3}
+
+Note the *capital* letter on the field names to export them
