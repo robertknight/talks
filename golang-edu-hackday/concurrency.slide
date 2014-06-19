@@ -45,7 +45,10 @@ Goroutines are not first class values
 - No way to wait on a particular Goroutine
 
 Goroutines _can_ share memory - need to be careful here,
-data races are possible.
+data races are possible. There are primitives (mutexes etc.)
+to protect access to data from multiple values.
+
+But there is a better way to share data between goroutines - channels.
 
 * Goroutines
 
