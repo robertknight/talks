@@ -1,0 +1,67 @@
+Go - Concurrency
+
+18 Jun 2014
+
+* Concurrency features
+
+Go's _raison_d'être_ is concurrency. Built on two main features:
+
+- Goroutines
+- Channels
+
+* Goroutines
+
+A _goroutine_ is a lightweight thread, there can be millions
+at once.
+
+Goroutines are created by putting _go_ in front of a function call.
+
+	go func() {
+		// ...
+	}()
+
+This creates a new goroutine. The Go runtime schedules goroutines
+onto actual threads.
+
+* Goroutines - Demo
+
+.play code/goroutine.go
+
+* Concurrency models - Event Loops
+
+(Qt, Objective C, Android, Node.js, Twisted)
+
+.image http://dailypicksandflicks.com/wp-content/uploads/2011/09/Chess-cat.jpg
+
+* Concurrency models
+
+.image http://cdn0.vox-cdn.com/entry_photo_images/8379899/WiiU_SmashBros_scrnS01_08_E3.jpg 500 800
+
+* Goroutines
+
+Goroutines are not first class values
+
+- No way to determine current Goroutine ID
+- No way to wait on a particular Goroutine
+
+* Goroutines
+
+Widely used in standard library
+
+.play code/timers.go
+
+* Channels
+
+Primary means of communication between goroutines.
+Pipe which you can send or receive values of a particular type on.
+
+Two types - Buffered and unbuffered
+
+Sending _blocks_ if channel is full 
+Receiving _blocks_ until a value is available to read
+
+.play code/chan.go
+
+* Channels - Buffered
+
+.play code/chan_buffer.go
