@@ -26,23 +26,39 @@ A C++ app was taking [[http://commandcenter.blogspot.co.uk/2012/06/less-is-expon
 - Concurrency
 - Large programs and many developers
 
+* Ideas
+
+- Compound benefits of simplicity
+- Solve issues around 'programming in the large'
+- Make it easy to use all my cores
+- Strong UNIX-y influence
+
 * Result is Go
 
 - Statically typed, compiled language
 - Relatively simple
 - Lightweight syntax
-- Batteries included standard library and tools
+- Batteries included standard library
 - Types and interfaces, but no classes or inheritance
 - Concurrency built into the language
+- Good tools for profiling, testing, documentation etc.
 
 _Tip_: If you're searching for info related to go, use the term *golang*
 
 * What we'll cover
 
 - What it is useful for
+- Getting Go set up
 - Basic intro to the language
 - Using Go's concurrency features
 - Writing simple web services with Go
+
+* What is Go well suited for?
+
+- Command-line utilities
+- Web services
+- Daemons
+- Queue/pipeline processing components
 
 * Hello World
 
@@ -72,18 +88,31 @@ Check out the tool used for this presentation:
 	cd $GOPATH/src/code.google.com/p/go.tools/cmd/present
 	go build
 
-Save the following as _hello.slide_:
-
-	Hello World
-
-	18 Jun 2014
-
-	* First slide
-
-	* Second slide
-
 View the slide deck:
 
-	./present hello.slide
+	git clone https://github.com/robertknight/talks
+	./present talks/golang-edu-hackday/intro.slide
 
-See [[https://godoc.org/code.google.com/p/go.tools/present]] for more details.
+In your browser, navigate to:
+
+	http://localhost:3999/intro.slide
+
+See [[https://godoc.org/code.google.com/p/go.tools/present]] for syntax
+of .slide files.
+
+* Installing Go apps
+
+Installing a Go app builds binaries and installs them to $GOPATH/bin
+
+	export PATH=$GOPATH/bin:$PATH
+	go install
+	present intro.slide
+
+* Deploying Go apps
+
+Go binaries are fully self-contained. Unlike Java,
+Python etc. no runtime needed on the destination system.
+
+	scp present ssh://user@server:path/
+
+	// launch app on server
