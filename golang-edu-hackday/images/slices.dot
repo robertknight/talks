@@ -1,0 +1,6 @@
+digraph Slices {
+	node [shape = record];
+	array [ label = "<f0> 0 | <f1> 1 | <f2> 3 | <f3> 4 | <f4> 5", xlabel="Array" ]
+	slice [ label = "<f0> start | <f1> length | <f2> capacity", xlabel="Slice" ]
+	"slice":f0 -> "array":f1
+}

@@ -79,6 +79,11 @@ Or explicitly:
 	var myName string
 	myName = "Bob"
 
+Unused variables are an _error_. Use an underscore
+if you want to ignore a value.
+
+	file, _ := os.Open("somefile.json")
+
 * Variable Types
 
 No automatic conversions between types, use explicit conversions
@@ -116,11 +121,21 @@ which are views onto part of an array.
 
 Create a slice with `existingSlice[start:end]`
 
-package main
-
-func 
-
 .play code/slices.go
+
+* Arrays 2
+
+Slices are immutable. Create new slices using `slice[low:high]` or `append()`
+
+`append()` takes a slice, adds one or more elements to the underlying
+array and returns a new slice.
+
+The new slice _may_or_may_not_ use the same array.
+
+	list := []int{1,2,3}
+	list2 := append(list,4)
+
+.image images/slices.svg
 
 * Maps
 
@@ -144,7 +159,13 @@ That last example is inefficient, we'll come back and add concurrency later.
 
 * Structs
 
-Go has structs, these can be passed around via _reference_ or _value_.
+Structs declared with
+
+	type <Name> struct {
+		// fields
+	}
+
+These can be passed around via _reference_ or _value_.
 
 	type Point struct {
 		X float
@@ -155,3 +176,68 @@ Go has structs, these can be passed around via _reference_ or _value_.
 	aPointReference := &Point{X : 2, Y : 3}
 
 Note the *capital* letter on the field names to export them
+
+* Methods
+
+Go doesn't have classes but does have _methods_.
+A method can be defined on any type.
+
+	func (m MyType) SomeMethod() {
+	}
+
+	func (m *MyType) SomeMethod() {
+	}
+
+The receiver can be a value or a pointer.
+
+* Methods
+
+.play code/structs.go
+
+* Interfaces
+
+Some languages are _nominally_ typed, where functions
+take a value that implements an interface with a certain name -
+eg. C++, Java, C#
+
+Others are _structurally_ typed, where functions
+can take any argument that has certain properties - eg. Javascript,
+Python, Ruby.
+
+Go uses structural typing
+
+* Interfaces
+
+An interface is a list of methods.
+_Any_ type which has those methods implements the interface.
+There is no explicit link between the two.
+
+Names usually end with _er_
+
+	type Reader interface {
+		Read(p []byte) (n int, error)
+	}
+
+Files, HTTP responses, buffers etc. all have a
+_Read()_ method so they can be used wherever a _Reader_ is required.
+
+* Interfaces - Example
+
+.play code/interfaces.go
+
+* Lambdas / closures
+
+Can pass functions around as values and capture variables
+from environment.
+
+.play code/httpserve.go
+
+* Errors
+
+No exceptions, instead methods usually return (result, error).
+_error_ is a simple interface:
+
+	type error interface {
+		Error() string
+	}
+
