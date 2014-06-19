@@ -30,16 +30,19 @@ A C++ app was taking [[http://commandcenter.blogspot.co.uk/2012/06/less-is-expon
 
 - Statically typed, compiled language
 - Relatively simple
+- Lightweight syntax
 - Batteries included standard library and tools
+- Types and interfaces, but no classes or inheritance
 - Concurrency built into the language
 
 _Tip_: If you're searching for info related to go, use the term *golang*
 
 * What we'll cover
 
-- What it is good and not so good for
+- What it is useful for
 - Basic intro to the language
 - Using Go's concurrency features
+- Writing simple web services with Go
 
 * Hello World
 
@@ -61,3 +64,26 @@ _Tip_: If you're searching for info related to go, use the term *golang*
 	mkdir -p $HOME/projects/go
 	export GOPATH=$HOME/projects/go
 
+* Test out GOPATH
+
+Check out the tool used for this presentation:
+
+	go get code.google.com/p/go.tools/cmd/present
+	cd $GOPATH/src/code.google.com/p/go.tools/cmd/present
+	go build
+
+Save the following as _hello.slide_:
+
+	Hello World
+
+	18 Jun 2014
+
+	* First slide
+
+	* Second slide
+
+View the slide deck:
+
+	./present hello.slide
+
+See [[https://godoc.org/code.google.com/p/go.tools/present]] for more details.
