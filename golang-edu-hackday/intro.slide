@@ -95,7 +95,7 @@ View the slide deck:
 
 In your browser, navigate to:
 
-	http://localhost:3999/intro.slide
+	http://127.0.0.1:3999/intro.slide
 
 See [[https://godoc.org/code.google.com/p/go.tools/present]] for syntax
 of .slide files.
