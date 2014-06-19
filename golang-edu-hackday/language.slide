@@ -241,3 +241,15 @@ _error_ is a simple interface:
 		Error() string
 	}
 
+* Formatting
+
+There is a standard coding convention for Go code and a tool,
+_go_fmt_ to format code.
+
+	go fmt source.go
+
+Reformats _source.go_ to use the house style
+
+_goimports_ is a better version which also updates _import_
+statements.
+
