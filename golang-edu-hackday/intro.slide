@@ -71,6 +71,7 @@ _Tip_: If you're searching for info related to go, use the term *golang*
 * Installation
 
 - Installers for Windows, Mac, Linux available from [[golang.org]]
+- Or use the Go playground at [[http://play.golang.org]] for experimentation
 - Debian/Ubuntu users can also use:
 
 	sudo apt-get install golang
@@ -116,3 +117,9 @@ Python etc. no runtime needed on the destination system.
 	scp present ssh://user@server:path/
 
 	// launch app on server
+
+* Useful resources
+
+Standard library docs: [[http://golang.org/pkg]]
+
+Language introduction: [[http://tour.golang.org]]
