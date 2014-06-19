@@ -1,0 +1,63 @@
+Go - Intro
+
+18 Jun 2014
+
+* A little history
+
+* Somewhere deep in the bowels of Google...
+
+.image http://imgs.xkcd.com/comics/compiling.png
+
+A C++ app was taking [[http://commandcenter.blogspot.co.uk/2012/06/less-is-exponentially-more.html][45 minutes]] to compile...
+
+* Java had other problems+
+
+.image images/java-spring-classname.png
+
++See [[http://cdn.oreillystatic.com/en/assets/1/event/45/Public%20Static%20Void%20Presentation.pdf][Public Static Void]] from OSCON 2010
+
+* The beards have a think
+
+.image http://www.wired.com/wp-content/uploads/blogs/wiredenterprise/wp-content/uploads/2012/08/ken-thompson-dennis-ritchie.jpg
+
+* What is it we do again?
+
+- Web services
+- Concurrency
+- Large programs and many developers
+
+* Result is Go
+
+- Statically typed, compiled language
+- Relatively simple
+- Batteries included standard library and tools
+- Concurrency built into the language
+
+_Tip_: If you're searching for info related to go, use the term *golang*
+
+* What we'll cover
+
+- What it is good and not so good for
+- Basic intro to the language
+- Using Go's concurrency features
+
+* Hello World
+
+.play code/hello-world.go	
+
+	go run code/hello-world.go
+
+* Setup
+
+* Installation
+
+- Installers for Windows, Mac, Linux available from [[golang.org]]
+- Debian/Ubuntu users can also use:
+
+	sudo apt-get install golang
+
+- Create a directory to serve as the workspace for Go projects and set GOPATH:
+
+	mkdir -p $HOME/projects/go
+	export GOPATH=$HOME/projects/go
+
