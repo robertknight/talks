@@ -1,6 +1,6 @@
 Go - Concurrency
 
-18 Jun 2014
+20 Jun 2014
 
 * Concurrency features
 
@@ -101,3 +101,17 @@ Find problems with
 The _select_ statement can be used to wait on multiple channels.
 
 .play code/select.go /START OMIT/,/END OMIT/
+
+* Select 2
+
+If all channels are blocked, the *default* clause will be executed:
+
+	select {
+	case v1 := <-c1:
+		// handle first channel
+	case v2 := <-c2:
+		// handle second channel
+	default:
+		// runs if both c1 and c2 are blocked
+	}
+
