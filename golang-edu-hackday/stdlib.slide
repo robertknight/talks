@@ -1,0 +1,10 @@
+Go - Standard Library
+
+20 Jun 2014
+
+* JSON
+
+The _encoding/json_ package can be used to deserialize
+a JSON object into a dict
+
+
