@@ -3,11 +3,152 @@ Outline
  - Intro
  - Show demo app - Meetups viewer
  - What needs to happen when setState() or setProps() is called
- - Dirty component queue and update transaction
- - Transaction flushing and component sorting
+ - Possible approaches to updating view
+  - Full document replacement
+  - Diff-ing tree to produce an edit script
+  - Complexity of generic tree diff
+  - React's approach: Heuristics to implement O(N) diffing
+ - React update walkthrough
+  - Dirty component queue and update transaction
+  - Transaction flushing and component sorting
+  - Level-by-level reconciliation
+  - List reconciliation
+    - How generic list diff-ing works - O(n^2) cost
+    - How React optimizes with item keys - O(n) cost
  - Conclusion
 
 ## Intro
+
+## Walkthrough
+
+### Demo app - Meetup Viewer
+ - To illustrate the React update flow, we'll use a simple demo app.
+   This app is a Meetup viewer, for viewing info about a meetup
+   and what is happening at future events.
+ - The UI has three parts:
+   - The top section has a banner for the meetup and a tab
+     bar that lets the user switch between details of the current
+     meetup and a list of past meetups
+   - A tab that shows details of the upcoming meetup
+   - A tab that shows a list of past meetups
+ - Our app is structured as a set of React components [_show
+   in Chrome dev tools_]:
+   - A top-level component for the app
+   - One for the logo
+   - A tab bar component
+   - The meetup info tab
+   - The meetup list tab
+ - We'll walk through what goes on in React when we navigate
+   around the app.
+
+### Reconciliation overview
+ - The main navigation action the user can take is to
+   switch tabs. When the app loads, the first tab is
+   selected, the render() method on our app is called and
+   React produces this markup [_show markup_]
+ - When the use navigates to the second tab, the state of
+   our app is updated, render() is called again and React
+   produces this markup [_show markup_]
+ - React's task here is to get the document from the first
+   markup to the second as efficiently as possible.
+ - There are several ways we could do this:
+   1. Replace the whole UI. This works, it gives the correct
+      result, but is slow.
+   2. Instead, we'd like a set of instructions, or 'edit script'
+      that will tells us how to convert this DOM [_show DOM A_]
+      into this DOM [_show DOM B_] with as few steps as possible.
+   3. This is like a 'git diff' [_show git diff_] but applied
+      to a tree.
+
+   [_show tree diff graphic_]
+
+   1. __Problem__ - There are lots of ways to modify a tree,
+      comparing two trees to find the minimal set of
+      changes is expensive. [_show complexity graphic_]
+   2. __Solution__ - Consider the kinds of changes which are likely
+      to happen between one DOM tree and the next, pick some
+      heuristics which speed up the comparison at the risk
+      of making more changes to the DOM than necessary.
+
+#### First Optimization - Level-by-level
+  - The first major heuristic is that it is rare for one part
+    of the tree to move to a completely different part.
+    Instead what usually happens is that a UI component is
+    added or removed under a parent.
+  - We can take advantage of this by going down the tree
+    level-by-level and only looking to find the minimal set of
+    edits to the DOM within a level. If a component moves to
+    a completely different part of the tree, React
+    will re-create it from scratch.
+  - This reduces the cost to O(_depth-of-tree_ _x_ _cost-of-each-level_)
+
+
+#### Second Optimization - Item Keys
+  - So now we've simplified the problem by dealing with one
+    level of the DOM at each step. What is the cost of diff-ing
+    the children at each level?
+  - A general-purpose approach is to find the _longest common
+    subsequence_ of two lists. That means, the list of
+    common items which occur in the same order in both.
+
+    The cost of this is O(n^2), which could still be expensive
+    if we have a lot of items.
+  - React's optimization here is that in most web applications,
+    we can usually come up with a unique identifier for every
+    item in the list. The ID of a tweet, the number of a bug,
+    the date of a meetup etc.
+  - If every item in the list has a unique ID, we can compare two
+    lists much more cheaply:
+
+    ````
+    for (var item in newList) {
+      if (item in oldList) {
+        // item unchanged or moved
+      } else {
+        // item added
+      }
+    }
+    for (var item in oldList) {
+      if (!(item in newList)) {
+        // item removed
+      }
+    }
+    ````
+
+#### Third Optimization - Component Types
+
+So we now have a combination of two optimizations that reduce
+the complexity down to O(n), so at worst the cost depends on
+the total number of nodes in the DOM. However, we still want
+to do better!
+
+The next piece of domain-specific knowledge we can use is that
+we have a tree of components. If one type of component
+is replaced with another, the new and old probably don't have
+much in common.
+
+For example, when we switch tabs in the meetups app, the
+content changes completely. Since we're using a different
+component, React won't bother to recurse into the trees
+that make up the components.
+
+#### Fourth Optimization - shouldComponentUpdate()
+
+The previous three optimizations are general purpose optimizations
+for app user interfaces. For our specific apps, we might
+have knowledge that certain component changes won't
+affect the way a component is displayed or the events it
+handles. React therefore provides a shouldComponentUpdate()
+method which a component will implement to tell React whether
+a change in props or state will require a re-render..
+
+## Additional Optimizations
+
+### Batching
+
+
+### Event Listeners
+
 
 ## Conclusion:
 
@@ -92,7 +233,7 @@ Basic idea is: Consider the kinds of changes which typically
 
  2. When we have lists of items (TODOs, tweets, bugs), we
     can usually come up with a unique ID for each item.
-	
+
 	eg. In a list of tweets, emails, bugs, shopping cart
 	    items, recipe ingredients - we could easily come
 		up with a unique ID for each.
@@ -188,5 +329,3 @@ Other Optimizations:
 
   You can use this by providing a shouldComponentUpdate()
   implementation.
-
-
