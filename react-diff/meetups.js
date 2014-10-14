@@ -33,6 +33,16 @@ var MeetupDetails = React.createClass({
 	}
 });
 
+var tabOrder = 0;
+
+var Tab = React.createClass({
+	displayName: 'Tab',
+
+	render: function() {
+		return React.DOM.div(Object.assign({}, this.props), this.props.children);
+	}
+});
+
 var TabBar = React.createClass({
 	displayName: 'TabBar',
 
@@ -43,7 +53,16 @@ var TabBar = React.createClass({
 	},
 
 	render: function() {
+		++tabOrder;
+
 		var self = this;
+
+		// uncomment lines below to change component type
+		// on every other render
+		var tabClass = React.DOM.div;
+		if (tabOrder % 2 == 0) {
+			//tabClass = Tab;
+		}
 
 		var tabs = [];
 		this.props.tabs.forEach(function (tab, index) {
@@ -51,7 +70,7 @@ var TabBar = React.createClass({
 			if (self.state.selectedIndex == index) {
 				selectedClass = 'selected';
 			}
-			tabs.push(React.DOM.div({
+			tabs.push(tabClass({
 				className:'tab ' + selectedClass,
 				onClick: function() {
 					self.setState({selectedIndex: index});
@@ -61,9 +80,7 @@ var TabBar = React.createClass({
 			}, tab.label));
 		});
 
-		return React.DOM.div({className: 'tabBar'},
-			tabs
-		);
+		return React.DOM.div({className: 'tabBar'}, tabs);
 	}
 });
 
@@ -138,3 +155,29 @@ var MeetupApp = React.createClass({
 
 React.renderComponent(MeetupApp({}), document.getElementById('app'));
 
+var domUpdateObserver = new MutationObserver(function(records) {
+	var added = 0;
+	var removed = 0;
+	var updatedAttrs = 0;
+	var updatedText = 0;
+	records.forEach(function(record) {
+		if (record.type == 'childList') {
+			added += record.addedNodes.length;
+			removed += record.removedNodes.length;
+		} else if (record.type == 'attributes') {
+			updatedAttrs += 1;
+		} else if (record.type == 'characterData') {
+			updateText += 1;
+		}
+	});
+
+	console.log('DOM Update: Added %d nodes, removed %d nodes, updated %d nodes',
+	  added, removed, updatedAttrs + updatedText);
+});
+
+domUpdateObserver.observe(document.getElementById('app'), {
+	childList: true,
+	subtree: true,
+	attributes: true,
+	characterData: true
+});
