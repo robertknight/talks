@@ -132,7 +132,22 @@ content changes completely. Since we're using a different
 component, React won't bother to recurse into the trees
 that make up the components.
 
-#### Fourth Optimization - shouldComponentUpdate()
+#### Fourth Optimization - Comparing DOM properties and styles
+
+After going down the tree level by level and matching up
+items from the previous and next render, we'll come to a
+point where we have a React.DOM.* component from the
+previous render, a React.DOM.* component from the next render
+and we need to update the real DOM.
+
+Rather than comparing each property from the DOM component
+to the matching property in the real DOM object, we instead
+compare the DOM property from the previous props with
+the property from the next props. Doing the comparison between
+Javascript values is much cheaper than accessing the DOM
+to retrieve the current property value.
+
+#### Fifth Optimization - shouldComponentUpdate()
 
 The previous three optimizations are general purpose optimizations
 for app user interfaces. For our specific apps, we might
@@ -144,11 +159,44 @@ a change in props or state will require a re-render..
 
 ## Additional Optimizations
 
+In addition to the reconciliation algorithm optimizations,
+React also implements additional optimizations to reduce
+the number of UI updates.
+
 ### Batching
+
+The first is to batch changes. If you call setState() or setProps()
+on one component, that may trigger a series of updates to other
+components. The purpose of batching is to collect all of those
+updates together and perform a re-render only once.
+
+The algorithm is implemented in ReactUpdates.js and works as follows:
+ - The user performs an action, and setState() or setProps()
+   gets called. The first call starts a _batched update_.
+ - During a batched update, any modified components are added
+   to a list.
+ - When the batched update ends, all of the dirty components
+   are sorted by depth from the root component so that components
+   higher up the DOM tree are processed first. The rationale
+   is that
+ - Exactly which updates get collected together in a single batch
+   depends on a pluggable batching strategy. React provides two
+   out of the box:
+   - The default strategy is to collect all of the updates that
+     happen during the first setState() / setProps() call
+     and perform the update when the top-level setState() / setProps()
+     call returns.
+   - Another strategy requests an animation frame and collects
+     all of the updates which happen from the first update
+     until the animation frame occurs.
 
 
 ### Event Listeners
 
+The last major optimization is how adding handlers via on_EventName_()
+works. Instead of attaching an event listener to the DOM
+element corresponding to the React component, React instead
+adds one event listener at the root of the document.
 
 ## Conclusion:
 
