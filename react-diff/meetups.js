@@ -1,5 +1,3 @@
-var ReactPerf = React.addons.Perf;
-
 var MeetupItem = React.createClass({
 	displayName: 'MeetupItem',
 
@@ -75,14 +73,10 @@ var TabBar = React.createClass({
 			tabs.push(tabClass({
 				className:'tab ' + selectedClass,
 				onClick: function() {
-					ReactPerf.start();
-					setTimeout(function() {
-						ReactPerf.stop();
-						ReactPerf.printDOM();
-					}, 100);
-
-					self.setState({selectedIndex: index});
-					self.props.onTabChanged(tab.id);
+					measureDOMChanges(function() {
+						self.setState({selectedIndex: index});
+						self.props.onTabChanged(tab.id);
+					});
 				},
 				key: tab.id
 			}, tab.label));
