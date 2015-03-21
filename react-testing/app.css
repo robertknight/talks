@@ -1,0 +1,11 @@
+.message-list {
+
+}
+
+.message-item {
+	cursor: 'pointer';
+}
+
+.message-item-selected {
+	background-color: #eee;
+}
