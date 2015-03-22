@@ -3,7 +3,19 @@
 }
 
 .message-item {
-	cursor: 'pointer';
+	cursor: pointer;
+	padding: 10px;
+}
+
+.message-item-subject {
+}
+
+.message-item-from {
+	font-size: 12px;
+}
+
+.message-item-snippet {
+	color: #bbb;
 }
 
 .message-item-selected {

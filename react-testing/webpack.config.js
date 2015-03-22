@@ -1,10 +1,13 @@
 var RewirePlugin = require('rewire-webpack');
 
 module.exports = {
-	entry: ['./tests/tests', 'webpack/hot/dev-server'],
+	entry: {
+		app: ['./src/app', 'webpack/hot/dev-server'],
+		tests: ['./tests/tests', 'webpack/hot/dev-server']
+	},
 	output: {
 		path: __dirname + '/dist',
-		filename: 'app.bundle.js'
+		filename: '[name].bundle.js'
 	},
 	module: {
 		loaders: [{

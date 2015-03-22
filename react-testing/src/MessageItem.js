@@ -14,9 +14,9 @@ export default class MessageItem extends React.Component {
 			ref="container"
 			onClick={this.props.onClick}
 		>
-			<div ref="subject">{this.props.subject}</div>
-			<div ref="from">{this.props.from}</div>
-			<div ref="snippet">{this.props.snippet}</div>
+			<div className='message-item-subject' ref="subject">{this.props.subject}</div>
+			<div className='message-item-from' ref="from">{this.props.from}</div>
+			<div className='message-item-snippet' ref="snippet">{this.props.snippet}...</div>
 		</div>;
 	}
 }
