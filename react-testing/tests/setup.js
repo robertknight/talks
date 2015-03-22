@@ -7,7 +7,6 @@ import Q from 'q';
 var FAKE_DOM_HTML = `
 <html>
 <body>
-<div id="app"></div>
 </body>
 </html>
 `;

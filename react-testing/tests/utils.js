@@ -8,6 +8,12 @@ export function withContainer(callback) {
 	var React = require('react');
 
 	let appElement = document.getElementById('app');
+	if (!appElement) {
+		appElement = document.createElement('div');
+		appElement.id = 'app';
+		document.body.appendChild(appElement);
+	}
+
 	appElement.innerHTML = '';
 	callback(appElement);
 	React.unmountComponentAtNode(appElement);

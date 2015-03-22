@@ -21,7 +21,7 @@ export default class MessageList extends React.Component {
 				snippet={message.snippet}
 				isSelected={message === this.state.selectedMessage}
 				
-				onClick={() => this.props.onSelect(message)}
+				onClick={() => this.setState({selectedMessage: message})}
 			/>
 		)}
 		</div>
