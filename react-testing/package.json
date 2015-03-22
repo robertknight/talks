@@ -4,23 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "make test"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "classnames": "^1.2.0",
-    "jsdom": "^4.0.2",
-    "null-loader": "^0.1.1",
     "q": "^1.2.0",
-    "react": "^0.13.0"
+    "react": "^0.13.1"
   },
   "devDependencies": {
     "babel-core": "^4.7.16",
     "babel-loader": "^4.2.0",
+    "chai": "^2.1.2",
     "gulp": "^3.8.11",
+    "htmlparser": "^1.7.7",
+    "jsdom": "^4.0.2",
     "mocha": "^2.2.1",
     "mocha-loader": "^0.7.1",
+    "null-loader": "^0.1.1",
     "rewire": "^2.3.1",
     "rewire-webpack": "^1.0.0",
     "webpack": "^1.7.3"

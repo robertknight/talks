@@ -3,7 +3,7 @@ var RewirePlugin = require('rewire-webpack');
 module.exports = {
 	entry: {
 		//app: './src/app',
-		tests: './tests/MessageList'
+		tests: './tests/tests'
 	},
 	output: {
 		path: __dirname + '/dist',
@@ -15,7 +15,7 @@ module.exports = {
 			exclude: /node_modules/,
 			loader: 'babel-loader'
 		},{
-			test: /tests.*\.js$/,
+			test: /tests.*_test\.js$/,
 			loader: 'mocha-loader!babel-loader'
 		},{
 			test: /node_modules\/jsdom/,
