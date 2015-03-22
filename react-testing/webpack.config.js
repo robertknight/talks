@@ -21,5 +21,6 @@ module.exports = {
 	},
 	plugins: [
 		new RewirePlugin()
-	]
+	],
+	devtool: 'eval'
 };
