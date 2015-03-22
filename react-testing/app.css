@@ -1,23 +1,62 @@
-.message-list {
-
+body {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 14px;
+	background-image: url('https://abs.twimg.com/images/themes/theme1/bg.png');
+	background-color: #C0DEED;
+	background-repeat: no-repeat;
 }
 
-.message-item {
+.app {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+}
+
+.tweet-list {
+	width: 500px;
+	background-color: white;
+	border-radius: 5px;
+}
+
+.tweet-item {
+	display: flex;
+	flex-direction: row;
 	cursor: pointer;
 	padding: 10px;
+	border-bottom: 1px solid #ddd;
 }
 
-.message-item-subject {
+.tweet-item-details {
+	margin-left: 10px;
 }
 
-.message-item-from {
+.tweet-item:hover {
+	background-color: #efefef;
+}
+
+.tweet-item-user-icon {
+	border-radius: 3px;
+	width: 48px;
+	height: 48px;
+}
+
+.tweet-item-user-description {
+	font-weight: bold;
+	padding-right: 5px;
+}
+
+.tweet-item-user-screen-name {
+	color: #bbb;
 	font-size: 12px;
 }
 
-.message-item-snippet {
+.tweet-item-date {
 	color: #bbb;
 }
 
-.message-item-selected {
+.tweet-item-text {
+}
+
+.tweet-item-selected {
 	background-color: #eee;
 }
