@@ -8,10 +8,13 @@ export default class TweetListContainer extends React.Component {
 		super(props);
 
 		var tweetStore = new TweetStore();
+		tweetStore.on('change', () => {
+			this.setState({tweets: tweetStore.getTweets()});
+		});
 
 		this.state = {
 			tweets: tweetStore.getTweets()
-		}
+		};
 	}
 
 	render() {

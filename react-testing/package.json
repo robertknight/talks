@@ -10,8 +10,13 @@
   "license": "ISC",
   "dependencies": {
     "classnames": "^1.2.0",
+    "cors": "^2.5.3",
+    "express": "^4.12.3",
+    "flummox": "^3.1.1",
+    "node-fetch": "^1.0.5",
     "q": "^1.2.0",
-    "react": "^0.13.1"
+    "react": "^0.13.1",
+    "twitter": "^1.2.5"
   },
   "devDependencies": {
     "babel-core": "^4.7.16",
