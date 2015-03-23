@@ -23,7 +23,7 @@ export default class TweetItem extends React.Component {
 	}
 
 	render() {
-		let tweet = this.props.tweet;
+		const tweet = this.props.tweet;
 		const dateString = relativeDate(new Date(Date.parse(tweet.createdAt)));
 
 		return <div className={classNames({

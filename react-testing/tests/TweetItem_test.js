@@ -5,7 +5,7 @@ import rewire from 'rewire';
 
 import setup from './setup';
 
-var TweetItem = rewire('../src/TweetItem');
+const TweetItem = rewire('../src/TweetItem');
 
 const TEST_TWEET = {
 	id: 'tweet-1',
@@ -19,16 +19,16 @@ const TEST_TWEET = {
 
 describe('TweetItem', () => {
 	it('should display item details', () => {
-		var tweet = TEST_TWEET;
-		var item = React.addons.TestUtils.renderIntoDocument(
+		const tweet = TEST_TWEET;
+		const item = React.addons.TestUtils.renderIntoDocument(
 			<TweetItem tweet={tweet}/>
 		);
 
-		var userIcon = React.findDOMNode(item.refs.userIcon);
-		var userDescription = React.findDOMNode(item.refs.userDescription);
-		var userScreenName = React.findDOMNode(item.refs.userScreenName);
-		var date = React.findDOMNode(item.refs.date);
-		var text = React.findDOMNode(item.refs.text);
+		const userIcon = React.findDOMNode(item.refs.userIcon);
+		const userDescription = React.findDOMNode(item.refs.userDescription);
+		const userScreenName = React.findDOMNode(item.refs.userScreenName);
+		const date = React.findDOMNode(item.refs.date);
+		const text = React.findDOMNode(item.refs.text);
 
 		expect(userDescription.textContent).to.equal(tweet.user.description);
 		expect(userScreenName.textContent).to.equal('@' + tweet.user.screenName);
