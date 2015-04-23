@@ -9,6 +9,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
+	"runtime/pprof"
 )
 
 type threshold struct {
@@ -17,14 +18,41 @@ type threshold struct {
 }
 
 var symbols []threshold = []threshold{
-	{0.1, ' '},
-	{0.2, '.'},
-	{0.3, '+'},
-	{0.4, 'o'},
-	{0.45, '#'},
+	{0, ' '},
+	{0.0166667, '*'},
+	{0.0333333, '%'},
+	{0.0666667, '-'},
+	{0.0833333, '"'},
+	{0.1, '}'},
+	{0.116667, '\''},
+	{0.133333, '!'},
+	{0.15, ';'},
+	{0.166667, '+'},
+	{0.183333, '$'},
+	{0.2, ')'},
+	{0.216667, '&'},
+	{0.233333, '3'},
+	{0.25, 'Y'},
+	{0.266667, '7'},
+	{0.283333, '9'},
+	{0.3, '0'},
+	{0.316667, '5'},
+	{0.333333, '2'},
+	{0.35, '1'},
+	{0.366667, 'K'},
+	{0.383333, 'T'},
+	{0.4, '4'},
+	{0.416667, 'h'},
+	{0.433333, '#'},
+	{0.466667, 'D'},
+	{0.483333, 'R'},
+	{0.533333, 'M'},
+	{0.55, 'B'},
+	{0.566667, 'H'},
+	{0.583333, 'E'},
 }
 
-func AsciiArtChar(greyVal float64) rune {
+func AsciiArtChar(greyVal float64, symbols []threshold) rune {
 	ch := ' '
 	for _, sym := range symbols {
 		if greyVal > sym.min {
@@ -34,7 +62,7 @@ func AsciiArtChar(greyVal float64) rune {
 	return ch
 }
 
-func Asciify(img image.Image, charWidth int, charHeight int) []string {
+func Asciify(img image.Image, charWidth int, charHeight int, charFunc func(float64) rune) []string {
 	result := []string{}
 
 	height := img.Bounds().Max.Y - img.Bounds().Min.Y
@@ -63,7 +91,7 @@ func Asciify(img image.Image, charWidth int, charHeight int) []string {
 		greyLine := ""
 		for col := 0; col < cols; col++ {
 			greyVal := greyVals[row*cols+col]
-			greyLine += string(AsciiArtChar(greyVal))
+			greyLine += string(charFunc(greyVal))
 		}
 		result = append(result, greyLine)
 	}
@@ -74,7 +102,15 @@ func Asciify(img image.Image, charWidth int, charHeight int) []string {
 func main() {
 	var charWidth = flag.Int("charwidth", 10, "Number of pixels (horizontal) per ASCII-art char")
 	var charHeight = flag.Int("charheight", 20, "Number of pixels (vertical) per ASCII-art char")
+	var brightness = flag.Float64("brightness", 0.0, "Brightness adjustment (default 0)")
+	//var contrast = flag.Float64("contrast", 0.0, "Contrast adjustment (default 0)")
 	flag.Parse()
+
+	profile, _ := os.Create("profile.pprof")
+	pprof.StartCPUProfile(profile)
+	defer func() {
+		pprof.StopCPUProfile()
+	}()
 
 	fileName := flag.Args()[0]
 
@@ -90,7 +126,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	art := Asciify(img, *charWidth, *charHeight)
+	art := Asciify(img, *charWidth, *charHeight, func(greyVal float64) rune {
+		greyVal += *brightness
+		return AsciiArtChar(greyVal, symbols)
+	})
+
 	for _, line := range art {
 		fmt.Println(line)
 	}

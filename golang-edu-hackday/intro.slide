@@ -60,6 +60,11 @@ _Tip_: If you're searching for info related to go, use the term *golang*
 - Daemons
 - Queue/pipeline processing components
 
+Or more generally:
+
+- Applications where you want to do many things at once
+- Scripting language replacement with better performance, static typing and concurrency
+
 * Hello World
 
 .play code/hello-world.go	
